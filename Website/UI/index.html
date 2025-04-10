@@ -1,0 +1,467 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Age Detection App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .result { margin-top: 20px; font-size: 1.2em; }
+        img { max-width: 500px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Upload an Image for Age Detection</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <button type="submit">Analyze</button>
+    </form>
+
+    {% if filename %}
+        <div class="result">
+            <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Image">
+            <p>Age: {{ age }} years</p>
+            <p>Gender: {{ gender }}</p>
+            <p>Emotion: {{ emotion }}</p>
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <div class="error" style="color: red;">Error: {{ error }}</div>
+    {% endif %}
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Age Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --danger: #f72585;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin: 2rem 0;
+            transition: all 0.3s ease;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.05);
+        }
+        
+        .upload-area.active {
+            border-color: var(--success);
+            background: rgba(76, 201, 240, 0.05);
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .result-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            margin-top: 2rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .result-details {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid var(--primary);
+        }
+        
+        .result-card h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .result-card p {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .error {
+            color: var(--danger);
+            background: rgba(247, 37, 133, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            margin: 2rem 0;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(67, 97, 238, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            margin-top: auto;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .result-details {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Age Analyzer</h1>
+        <p class="subtitle">Upload a photo to detect age, gender, and emotion</p>
+        
+        <form method="POST" enctype="multipart/form-data" id="upload-form">
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & Drop your image here</h3>
+                <p>or click to browse files</p>
+                <input type="file" id="file-input" name="file" accept="image/*" required>
+                <button type="submit" class="btn" id="analyze-btn">Analyze Image</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing image...</p>
+            </div>
+            
+            <div class="error" id="error-message"></div>
+        </form>
+        
+        <div class="result-container" id="result-container">
+            <h2>Analysis Results</h2>
+            <img class="result-image" id="result-image" src="" alt="Analyzed Image">
+            
+            <div class="result-details">
+                <div class="result-card">
+                    <h3>Age</h3>
+                    <p id="age-result">--</p>
+                </div>
+                <div class="result-card">
+                    <h3>Gender</h3>
+                    <p id="gender-result">--</p>
+                </div>
+                <div class="result-card">
+                    <h3>Emotion</h3>
+                    <p id="emotion-result">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>AI Age Analyzer © 2025 | Powered by Charusat</p>
+    </footer>
+    
+    <script>
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('result-container');
+        const errorMessage = document.getElementById('error-message');
+        
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                uploadArea.classList.add('active');
+                analyzeBtn.style.display = 'inline-block';
+            }
+        });
+        
+        // Handle drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            uploadArea.classList.add('highlight');
+        }
+        
+        function unhighlight() {
+            uploadArea.classList.remove('highlight');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            uploadArea.classList.add('active');
+            analyzeBtn.style.display = 'inline-block';
+        }
+        
+        // Form submission
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading spinner
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            resultContainer.style.display = 'none';
+            
+            const formData = new FormData(this);
+            
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Create a temporary DOM to parse the response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Hide loading spinner
+                loading.style.display = 'none';
+                
+                // Check for errors
+                const errorDiv = doc.querySelector('.error');
+                if (errorDiv && errorDiv.textContent.trim() !== '') {
+                    errorMessage.textContent = errorDiv.textContent;
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Update results
+                const resultImg = doc.querySelector('.result img');
+                const age = doc.querySelector('.result p:nth-of-type(1)');
+                const gender = doc.querySelector('.result p:nth-of-type(2)');
+                const emotion = doc.querySelector('.result p:nth-of-type(3)');
+                
+                if (resultImg) {
+                    document.getElementById('result-image').src = resultImg.src;
+                    document.getElementById('age-result').textContent = age ? age.textContent.replace('Age: ', '') : '--';
+                    document.getElementById('gender-result').textContent = gender ? gender.textContent.replace('Gender: ', '') : '--';
+                    document.getElementById('emotion-result').textContent = emotion ? emotion.textContent.replace('Emotion: ', '') : '--';
+                    resultContainer.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                errorMessage.textContent = 'An error occurred during analysis. Please try again.';
+                errorMessage.style.display = 'block';
+                console.error('Error:', error);
+            });
+        });
+        
+        // Populate results if coming back from server-side render
+        {% if filename %}
+            document.getElementById('result-image').src = "{{ url_for('static', filename='uploads/' + filename) }}";
+            document.getElementById('age-result').textContent = "{{ age }}";
+            document.getElementById('gender-result').textContent = "{{ gender }}";
+            document.getElementById('emotion-result').textContent = "{{ emotion }}";
+            document.getElementById('result-container').style.display = 'block';
+        {% endif %}
+        
+        {% if error %}
+            document.getElementById('error-message').textContent = "{{ error }}";
+            document.getElementById('error-message').style.display = 'block';
+        {% endif %}
+    </script>
+</body>
+</html>
+
+
+ <!-- <!DOCTYPE html>
+ <html>
+ <head>
+     <title>Age Detection App</title>
+     <style>
+         body { font-family: Arial, sans-serif; margin: 20px; }
+         .container { max-width: 600px; margin: 0 auto; }
+         .upload-area { border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 20px 0; }
+         .result { margin-top: 20px; padding: 15px; background: #f5f5f5; }
+         .error { color: red; margin: 10px 0; }
+         img { max-width: 100%; margin-top: 10px; }
+         .loading { display: none; margin: 10px 0; }
+     </style>
+ </head>
+ <body>
+     <div class="container">
+         <h1>Upload an Image for Age Detection</h1>
+         
+         <form method="POST" enctype="multipart/form-data" id="uploadForm">
+             <div class="upload-area">
+                 <p>Select an image to upload:</p>
+                 <input type="file" name="file" accept="image/*" required>
+                 <button type="submit">Analyze</button>
+             </div>
+             
+             <div class="loading" id="loadingIndicator">
+                 <p>Processing image...</p>
+             </div>
+         </form>
+ 
+         {% if error %}
+             <div class="error">{{ error }}</div>
+         {% endif %}
+ 
+         {% if filename %}
+             <div class="result">
+                 <h2>Results:</h2>
+                 <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Uploaded Image">
+                 <p><strong>Age:</strong> {{ age }} years</p>
+                 <p><strong>Gender:</strong> {{ gender }}</p>
+                 <p><strong>Emotion:</strong> {{ emotion }}</p>
+             </div>
+         {% endif %}
+     </div>
+ 
+     <script>
+         document.getElementById('uploadForm').addEventListener('submit', function() {
+             document.getElementById('loadingIndicator').style.display = 'block';
+         });
+     </script>
+ </body>
+ </html> -->
